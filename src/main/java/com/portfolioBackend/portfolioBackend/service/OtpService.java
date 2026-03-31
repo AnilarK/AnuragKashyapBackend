@@ -23,8 +23,11 @@ public class OtpService {
     private final OtpRecordRepository otpRecordRepository;
     private final JavaMailSender mailSender;
 
-    @Value("${spring.mail.username:noreply@example.com}")
-    private String fromEmail;
+    @Value("${spring.mail.username:}")
+    private String mailUsername;
+
+    @Value("${app.mail.from:}")
+    private String mailFrom;
 
     public OtpService(OtpRecordRepository otpRecordRepository, JavaMailSender mailSender) {
         this.otpRecordRepository = otpRecordRepository;
@@ -38,7 +41,11 @@ public class OtpService {
         otpRecordRepository.save(record);
 
         SimpleMailMessage message = new SimpleMailMessage();
-        String from = StringUtils.hasText(fromEmail) ? fromEmail : DEFAULT_FROM;
+        // SendGrid SMTP uses username="apikey" (not an email), so support explicit from.
+        String from = StringUtils.hasText(mailFrom)
+                ? mailFrom
+                : (StringUtils.hasText(mailUsername) && mailUsername.contains("@") ? mailUsername : DEFAULT_FROM);
+
         message.setFrom(from);
         message.setTo(email);
         message.setSubject("Your login code");
