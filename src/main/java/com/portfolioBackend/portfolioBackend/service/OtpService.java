@@ -3,8 +3,6 @@ package com.portfolioBackend.portfolioBackend.service;
 import com.portfolioBackend.portfolioBackend.model.OtpRecord;
 import com.portfolioBackend.portfolioBackend.repository.OtpRecordRepository;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -19,23 +17,21 @@ public class OtpService {
     private static final int OTP_LENGTH = 6;
     private static final int OTP_VALID_MINUTES = 10;
     private static final String DEFAULT_FROM = "noreply@example.com";
+    private static final String DEFAULT_FROM_NAME = "PortfolioBackend";
 
     private final OtpRecordRepository otpRecordRepository;
-    private final JavaMailSender mailSender;
-    private final SendGridEmailService sendGridEmailService;
-
-    @Value("${spring.mail.username:}")
-    private String mailUsername;
+    private final BrevoEmailService brevoEmailService;
 
     @Value("${app.mail.from:}")
     private String mailFrom;
 
+    @Value("${app.mail.from-name:}")
+    private String mailFromName;
+
     public OtpService(OtpRecordRepository otpRecordRepository,
-                      JavaMailSender mailSender,
-                      SendGridEmailService sendGridEmailService) {
+                      BrevoEmailService brevoEmailService) {
         this.otpRecordRepository = otpRecordRepository;
-        this.mailSender = mailSender;
-        this.sendGridEmailService = sendGridEmailService;
+        this.brevoEmailService = brevoEmailService;
     }
 
     public void sendOtp(String email) {
@@ -44,23 +40,16 @@ public class OtpService {
         OtpRecord record = new OtpRecord(email, otp, expiresAt);
         otpRecordRepository.save(record);
 
-        SimpleMailMessage message = new SimpleMailMessage();
-        // SendGrid SMTP uses username="apikey" (not an email), so support explicit from.
-        String from = StringUtils.hasText(mailFrom)
-                ? mailFrom
-                : (StringUtils.hasText(mailUsername) && mailUsername.contains("@") ? mailUsername : DEFAULT_FROM);
-
-        message.setFrom(from);
-        message.setTo(email);
-        message.setSubject("Your login code");
-        message.setText("Your one-time login code is: " + otp + "\n\nIt is valid for " + OTP_VALID_MINUTES + " minutes.");
-
-        // Prefer SendGrid Web API when configured (works on Render even if SMTP is blocked).
-        if (sendGridEmailService.isConfigured()) {
-            sendGridEmailService.sendTextEmail(from, email, message.getSubject(), message.getText());
-        } else {
-            mailSender.send(message);
+        if (!brevoEmailService.isConfigured()) {
+            throw new IllegalStateException("Brevo is not configured. Set app.brevo.api-key (or env BREVO_API_KEY).");
         }
+
+        String fromEmail = StringUtils.hasText(mailFrom) ? mailFrom : DEFAULT_FROM;
+        String fromName = StringUtils.hasText(mailFromName) ? mailFromName : DEFAULT_FROM_NAME;
+        String subject = "OTP";
+        String html = "<h1>Your OTP is " + otp + "</h1>";
+
+        brevoEmailService.sendHtmlEmail(fromName, fromEmail, email, subject, html);
     }
 
     public boolean verifyOtp(String email, String otp) {

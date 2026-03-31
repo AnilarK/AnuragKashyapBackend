@@ -12,51 +12,49 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 @Service
-public class SendGridEmailService {
+public class BrevoEmailService {
 
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(15))
             .build();
 
-    @Value("${SENDGRID_API_KEY:}")
+    @Value("${app.brevo.api-key:}")
     private String apiKey;
 
     public boolean isConfigured() {
         return StringUtils.hasText(apiKey);
     }
 
-    public void sendTextEmail(String from, String to, String subject, String text) {
+    public void sendHtmlEmail(String fromName, String fromEmail, String toEmail, String subject, String htmlContent) {
         if (!isConfigured()) {
-            throw new IllegalStateException("SENDGRID_API_KEY is not set");
+            throw new IllegalStateException("app.brevo.api-key is not set");
         }
-        String bodyJson = buildSendGridJson(from, to, subject, text);
+        String bodyJson = buildBrevoJson(fromName, fromEmail, toEmail, subject, htmlContent);
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://api.sendgrid.com/v3/mail/send"))
+                .uri(URI.create("https://api.brevo.com/v3/smtp/email"))
                 .timeout(Duration.ofSeconds(20))
-                .header("Authorization", "Bearer " + apiKey)
+                .header("api-key", apiKey)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(bodyJson, StandardCharsets.UTF_8))
                 .build();
 
         try {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            // Success is 202 Accepted
-            if (response.statusCode() != 202) {
-                throw new IllegalStateException("SendGrid send failed: HTTP " + response.statusCode() + " - " + response.body());
+            if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                throw new IllegalStateException("Brevo send failed: HTTP " + response.statusCode() + " - " + response.body());
             }
         } catch (Exception e) {
-            throw new IllegalStateException("SendGrid send failed: " + e.getMessage(), e);
+            throw new IllegalStateException("Brevo send failed: " + e.getMessage(), e);
         }
     }
 
-    private String buildSendGridJson(String from, String to, String subject, String text) {
-        // Minimal JSON with only text/plain content.
+    private String buildBrevoJson(String fromName, String fromEmail, String toEmail, String subject, String htmlContent) {
         return "{"
-                + "\"personalizations\":[{\"to\":[{\"email\":\"" + esc(to) + "\"}]}],"
-                + "\"from\":{\"email\":\"" + esc(from) + "\"},"
+                + "\"sender\":{\"name\":\"" + esc(fromName) + "\",\"email\":\"" + esc(fromEmail) + "\"},"
+                + "\"to\":[{\"email\":\"" + esc(toEmail) + "\"}],"
                 + "\"subject\":\"" + esc(subject) + "\","
-                + "\"content\":[{\"type\":\"text/plain\",\"value\":\"" + esc(text) + "\"}]"
+                + "\"htmlContent\":\"" + esc(htmlContent) + "\""
                 + "}";
     }
 
