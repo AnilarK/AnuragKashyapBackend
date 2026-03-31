@@ -22,6 +22,7 @@ public class OtpService {
 
     private final OtpRecordRepository otpRecordRepository;
     private final JavaMailSender mailSender;
+    private final SendGridEmailService sendGridEmailService;
 
     @Value("${spring.mail.username:}")
     private String mailUsername;
@@ -29,9 +30,12 @@ public class OtpService {
     @Value("${app.mail.from:}")
     private String mailFrom;
 
-    public OtpService(OtpRecordRepository otpRecordRepository, JavaMailSender mailSender) {
+    public OtpService(OtpRecordRepository otpRecordRepository,
+                      JavaMailSender mailSender,
+                      SendGridEmailService sendGridEmailService) {
         this.otpRecordRepository = otpRecordRepository;
         this.mailSender = mailSender;
+        this.sendGridEmailService = sendGridEmailService;
     }
 
     public void sendOtp(String email) {
@@ -50,7 +54,13 @@ public class OtpService {
         message.setTo(email);
         message.setSubject("Your login code");
         message.setText("Your one-time login code is: " + otp + "\n\nIt is valid for " + OTP_VALID_MINUTES + " minutes.");
-        mailSender.send(message);
+
+        // Prefer SendGrid Web API when configured (works on Render even if SMTP is blocked).
+        if (sendGridEmailService.isConfigured()) {
+            sendGridEmailService.sendTextEmail(from, email, message.getSubject(), message.getText());
+        } else {
+            mailSender.send(message);
+        }
     }
 
     public boolean verifyOtp(String email, String otp) {
