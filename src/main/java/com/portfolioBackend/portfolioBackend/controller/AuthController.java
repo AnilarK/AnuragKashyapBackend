@@ -1,6 +1,7 @@
 package com.portfolioBackend.portfolioBackend.controller;
 
-import com.portfolioBackend.portfolioBackend.service.AuthService;
+import com.portfolioBackend.portfolioBackend.dto.AuthDTO;
+import com.portfolioBackend.portfolioBackend.service.impl.AuthService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -50,7 +51,7 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("error", "email and otp are required"));
         }
         try {
-            String token = authService.verifyEmailOtpAndLogin(email, otp);
+            AuthDTO token = authService.verifyEmailOtpAndLogin(email, otp);
             return ResponseEntity.ok(Map.of("token", token, "type", "Bearer"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

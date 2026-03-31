@@ -1,11 +1,10 @@
 package com.portfolioBackend.portfolioBackend.controller;
 
+import com.portfolioBackend.portfolioBackend.dto.UserDTO;
 import com.portfolioBackend.portfolioBackend.model.User;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,7 +24,14 @@ public class UserController {
         dto.put("email", user.getEmail());
         dto.put("name", user.getName());
         dto.put("pictureUrl", user.getPictureUrl());
-        dto.put("roles", user.getRoles().stream().map(Enum::name).collect(Collectors.toList()));
+        dto.put("roles", user.getUserRoles());
         return ResponseEntity.ok(dto);
     }
+
+    @PostMapping("/user")
+    public  ResponseEntity<?> createUser(@RequestBody UserDTO userDTO){
+
+
+    }
+
 }

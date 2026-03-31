@@ -1,5 +1,6 @@
 package com.portfolioBackend.portfolioBackend.model;
 
+import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -8,6 +9,7 @@ import java.time.Instant;
 import java.util.Set;
 
 @Document(collection = "users")
+@Data
 public class User {
 
     @Id
@@ -23,14 +25,14 @@ public class User {
     private String googleSubjectId;
 
     @Indexed
-    private Set<Role> roles;
+    private UserRole userRoles;
 
     private boolean emailVerified;
     private Instant createdAt;
     private Instant updatedAt;
 
     public User() {
-        this.roles = Set.of(Role.USER);
+        this.userRoles = UserRole.USER;
         this.emailVerified = false;
         Instant now = Instant.now();
         this.createdAt = now;
@@ -54,27 +56,4 @@ public class User {
         return u;
     }
 
-    // getters and setters
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public String getPictureUrl() { return pictureUrl; }
-    public void setPictureUrl(String pictureUrl) { this.pictureUrl = pictureUrl; }
-    public String getGoogleSubjectId() { return googleSubjectId; }
-    public void setGoogleSubjectId(String googleSubjectId) { this.googleSubjectId = googleSubjectId; }
-    public Set<Role> getRoles() { return roles; }
-    public void setRoles(Set<Role> roles) { this.roles = roles; }
-    public boolean isEmailVerified() { return emailVerified; }
-    public void setEmailVerified(boolean emailVerified) { this.emailVerified = emailVerified; }
-    public Instant getCreatedAt() { return createdAt; }
-    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
-    public Instant getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
-
-    public void touch() {
-        this.updatedAt = Instant.now();
-    }
 }

@@ -1,5 +1,6 @@
-package com.portfolioBackend.portfolioBackend.service;
+package com.portfolioBackend.portfolioBackend.service.impl;
 
+import com.portfolioBackend.portfolioBackend.service.IEmailService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -12,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 @Service
-public class BrevoEmailService {
+public class EmailService implements IEmailService {
 
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(15))
@@ -21,14 +22,9 @@ public class BrevoEmailService {
     @Value("${app.brevo.api-key:}")
     private String apiKey;
 
-    public boolean isConfigured() {
-        return StringUtils.hasText(apiKey);
-    }
 
+    @Override
     public void sendHtmlEmail(String fromName, String fromEmail, String toEmail, String subject, String htmlContent) {
-        if (!isConfigured()) {
-            throw new IllegalStateException("app.brevo.api-key is not set");
-        }
         String bodyJson = buildBrevoJson(fromName, fromEmail, toEmail, subject, htmlContent);
 
         HttpRequest request = HttpRequest.newBuilder()

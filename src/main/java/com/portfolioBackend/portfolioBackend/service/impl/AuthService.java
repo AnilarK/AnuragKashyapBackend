@@ -1,12 +1,14 @@
-package com.portfolioBackend.portfolioBackend.service;
+package com.portfolioBackend.portfolioBackend.service.impl;
 
+import com.portfolioBackend.portfolioBackend.dto.AuthDTO;
 import com.portfolioBackend.portfolioBackend.model.User;
 import com.portfolioBackend.portfolioBackend.repository.UserRepository;
 import com.portfolioBackend.portfolioBackend.security.JwtUtil;
+import com.portfolioBackend.portfolioBackend.service.IAuthService;
 import org.springframework.stereotype.Service;
 
 @Service
-public class AuthService {
+public class AuthService implements IAuthService {
 
     private final UserRepository userRepository;
     private final OtpService otpService;
@@ -18,9 +20,7 @@ public class AuthService {
         this.jwtUtil = jwtUtil;
     }
 
-    /**
-     * Request OTP for email login. Sends OTP to the given email.
-     */
+
     public void requestEmailOtp(String email) {
         if (email == null || !email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
             throw new IllegalArgumentException("Invalid email");
@@ -28,10 +28,8 @@ public class AuthService {
         otpService.sendOtp(email.trim().toLowerCase());
     }
 
-    /**
-     * Verify OTP and login. Creates user if not exists, returns JWT.
-     */
-    public String verifyEmailOtpAndLogin(String email, String otp) {
+
+    public AuthDTO verifyEmailOtpAndLogin(String email, String otp) {
         if (email == null || otp == null || otp.isBlank()) {
             throw new IllegalArgumentException("Email and OTP are required");
         }
@@ -44,6 +42,13 @@ public class AuthService {
                     User newUser = User.fromEmail(normalizedEmail);
                     return userRepository.save(newUser);
                 });
-        return jwtUtil.generateToken(user);
+        String token =  jwtUtil.generateToken(user);
+
+
+        AuthDTO response = new AuthDTO();
+        response.setToken(token);
+        response.setUserRole(user.getUserRoles());
+        response.setUsername(user.getName());
+        return response;
     }
 }
