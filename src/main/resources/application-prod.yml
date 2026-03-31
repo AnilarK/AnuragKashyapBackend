@@ -42,7 +42,8 @@ spring:
             user-name-attribute: sub
 
 server:
-  port: ${SERVER_PORT:8080}
+  # Render provides PORT; keep SERVER_PORT override if you set it
+  port: ${SERVER_PORT:${PORT:8080}}
   servlet:
     context-path: ${CONTEXT_PATH:/}
 

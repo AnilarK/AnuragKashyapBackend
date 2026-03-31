@@ -1,0 +1,12 @@
+target
+.idea
+.vscode
+.git
+**/*.iml
+**/*.log
+**/application-local.yml
+**/application-local.yaml
+.env
+.env.*
+*.env
+
