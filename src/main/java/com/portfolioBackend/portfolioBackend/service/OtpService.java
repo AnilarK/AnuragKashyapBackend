@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.security.SecureRandom;
 import java.time.Instant;
@@ -17,6 +18,7 @@ public class OtpService {
     private static final String OTP_CHARS = "0123456789";
     private static final int OTP_LENGTH = 6;
     private static final int OTP_VALID_MINUTES = 10;
+    private static final String DEFAULT_FROM = "noreply@example.com";
 
     private final OtpRecordRepository otpRecordRepository;
     private final JavaMailSender mailSender;
@@ -36,7 +38,8 @@ public class OtpService {
         otpRecordRepository.save(record);
 
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(fromEmail);
+        String from = StringUtils.hasText(fromEmail) ? fromEmail : DEFAULT_FROM;
+        message.setFrom(from);
         message.setTo(email);
         message.setSubject("Your login code");
         message.setText("Your one-time login code is: " + otp + "\n\nIt is valid for " + OTP_VALID_MINUTES + " minutes.");
